@@ -2,7 +2,6 @@
 
 namespace Gentor\BnpPF\Service;
 
-
 /**
  * Class Bnp
  *
@@ -30,6 +29,7 @@ class Bnp
         $this->merchant = $config['merchant_id'];
         $this->client = new Client(
             $config['certificate'],
+            $config['key'],
             $config['password'],
             $config['test_mode']
         );
@@ -156,5 +156,4 @@ class Bnp
 
         return $object->Data->{$attribute};
     }
-
 }

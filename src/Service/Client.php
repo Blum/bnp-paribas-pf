@@ -2,6 +2,7 @@
 
 namespace Gentor\BnpPF\Service;
 
+use Illuminate\Support\Facades\Http;
 
 /**
  * Class Client
@@ -13,17 +14,22 @@ class Client
     /**
      * Test endpoint
      */
-    const TEST_ENDPOINT = 'https://ws-test.bnpparibas-pf.bg/ServicesPricing/';
+    const TEST_ENDPOINT = 'https://ws-test.pbpf.bg/ServicesPricing/';
 
     /**
      * Live endpoint
      */
-    const LIVE_ENDPOINT = 'https://ws.bnpparibas-pf.bg/ServicesPricing/';
+    const LIVE_ENDPOINT = 'https://ws.pbpf.bg/ServicesPricing/';
 
     /**
      * @var
      */
     protected $certificate;
+
+    /**
+     * @var
+     */
+    protected $key;
 
     /**
      * @var
@@ -52,9 +58,10 @@ class Client
      * @param      $password
      * @param bool $testMode
      */
-    public function __construct($certificate, $password, $testMode = false)
+    public function __construct($certificate, $key, $password, $testMode = false)
     {
         $this->certificate = $certificate;
+        $this->key = $key;
         $this->password = $password;
         $this->url = $testMode ? static::TEST_ENDPOINT : static::LIVE_ENDPOINT;
     }
@@ -67,20 +74,26 @@ class Client
      */
     public function getResult($urlParams)
     {
-        $this->setCurlOptions($urlParams);
+        // $this->setCurlOptions($urlParams);
 
-        $result = curl_exec($this->curl);
+        // $result = curl_exec($this->curl);
 
-        $code = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($this->curl);
+        // $code = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+        // $error = curl_error($this->curl);
 
-        curl_close($this->curl);
+        // curl_close($this->curl);
 
-        if (200 != $code) {
-            throw new Error($error, $code);
-        }
+        // if (200 != $code) {
+        //     throw new Error($error, $code);
+        // }
 
-        return $this->xml2obj($result);
+        $response = Http::withOptions([
+            'ssl_key' => [$this->key, $this->password],
+            'cert' => [$this->certificate, $this->password],
+            "verify" => false,
+        ])->get($this->url . $urlParams);
+
+        return $this->xml2obj($response);
     }
 
     /**
@@ -116,7 +129,7 @@ class Client
      * @param $obj
      * @param $result
      */
-    protected function normalizeSimpleXML($obj, &$result)
+    protected function normalizeSimpleXML($obj, & $result)
     {
         $data = $obj;
         if (is_object($data)) {
@@ -149,5 +162,4 @@ class Client
 
         return json_decode(json_encode($result));
     }
-
 }
